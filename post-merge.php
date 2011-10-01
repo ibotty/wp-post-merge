@@ -54,6 +54,8 @@ class PostMerge {
 
     add_filter("post_row_actions", array($this, "row_actions"), 10, 2);
     add_filter("page_row_actions", array($this, "row_actions"), 10, 2);
+
+    add_filter("admin_head", array($this, "head"), 10, 2);
   }
 
   function admin_scripts() {
@@ -63,13 +65,38 @@ class PostMerge {
   }
   function deinstall() {
   }
-  function activate() {
+
+  function head() {
+    if (isset($_GET['pm-candidate']) && isset($_GET['post_type'])) {
+      $candidate = intval($_GET['pm-candidate']);
+
+      echo "<style type='text/css'> #post-$candidate {background:rgba(255,0,0,0.2);} </style>";
+    }
   }
 
-
   function row_actions($actions, $post) {
-    $actions["posts_merge"] = '<a class="pm-merge" id="'.$post->ID.'" href="#">'.
-      __('Merge').'</a>';
+    $cur_url = $_SERVER['REQUEST_URI'];
+    $merge_url = 'tmp';
+
+    # if a merge candidate is already set
+    if (isset($_GET['pm-candidate'])) {
+      $candidate = intval($_GET['pm-candidate']);
+
+      # remove candidate status if same post
+      if ($post->ID === $candidate) {
+        $link = remove_query_arg('pm-candidate', $cur_url);
+        $displaytext = 'Cancel Merge';
+      } else { # merge
+        $link = esc_url(add_query_arg(array(
+          'pm-one'=>$candidate, 'pm-another'=>$post->ID), $merge_url));
+        $displaytext = 'Merge with selected '.$_GET['post_type'];
+      }
+    } else { # no merge candidate set
+      $link = esc_url(add_query_arg('pm-candidate', $post->ID, $cur_url));
+      $displaytext = 'Merge';
+    }
+    $str = '<a class="pm-merge" href="'.$link.'">'.__($displaytext).'</a>';
+    $actions["posts_merge"] = $str;
     return $actions;
   }
 
