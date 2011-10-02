@@ -67,7 +67,7 @@ class PostMerge {
   }
 
   function head() {
-    if (isset($_GET['pm-candidate']) && isset($_GET['post_type'])) {
+    if (isset($_GET['pm-candidate'])) {
       $candidate = intval($_GET['pm-candidate']);
 
       echo "<style type='text/css'> #post-$candidate {background:rgba(255,0,0,0.2);} </style>";
