@@ -47,36 +47,47 @@ class PostMerge {
   }
 
   function init() {
+    $this->merge_page_slug = 'pm-merge';
+
     register_activation_hook (__FILE__, array ($this, 'install'));
     register_deactivation_hook (__FILE__, array ($this, 'deinstall'));
 
-    add_action("admin_enqueue_scripts", array($this, "admin_scripts"));
+    add_action('admin_init', array($this, 'admin_init'));
+    add_filter("admin_head", array($this, "admin_head"), 10, 2);
+    add_filter("admin_menu", array($this, "admin_menu"));
 
     add_filter("post_row_actions", array($this, "row_actions"), 10, 2);
     add_filter("page_row_actions", array($this, "row_actions"), 10, 2);
-
-    add_filter("admin_head", array($this, "head"), 10, 2);
   }
 
-  function admin_scripts() {
-    wp_enqueue_script('pm-load_merge', plugins_url('pm-load_merge.js', __FILE__));
-  }
   function install() {
   }
   function deinstall() {
   }
 
-  function head() {
+  function admin_init() {
+    wp_register_script('jsdifflib', plugins_url('/vendor/jsdifflib/difflib.js',
+      __FILE__));
+    wp_register_style('jsdifflib', plugins_url('/vendor/jsdifflib/diffview.css',
+      __FILE__));
+
+    wp_register_script('pm-merge-script', plugins_url('/pm-merge.js', __FILE__),
+      array('jsdifflib'));
+    wp_register_style('pm-merge-style', plugins_url('/pm-merge.css', __FILE__),
+      array('jssdiflib'));
+  }
+
+  function admin_head() {
+    // add css to highlight selected candidate row
     if (isset($_GET['pm-candidate'])) {
       $candidate = intval($_GET['pm-candidate']);
-
       echo "<style type='text/css'> #post-$candidate {background:rgba(255,0,0,0.2);} </style>";
     }
   }
 
   function row_actions($actions, $post) {
     $cur_url = $_SERVER['REQUEST_URI'];
-    $merge_url = 'tmp';
+    $merge_url = menu_page_url($this->merge_page_slug, false);
 
     # if a merge candidate is already set
     if (isset($_GET['pm-candidate'])) {
@@ -85,7 +96,7 @@ class PostMerge {
       # remove candidate status if same post
       if ($post->ID === $candidate) {
         $link = remove_query_arg('pm-candidate', $cur_url);
-        $displaytext = 'Cancel Merge';
+        $displaytext = 'Cancel merge';
       } else { # merge
         $link = esc_url(add_query_arg(array(
           'pm-one'=>$candidate, 'pm-another'=>$post->ID), $merge_url));
@@ -100,15 +111,35 @@ class PostMerge {
     return $actions;
   }
 
-  function tools_scripts() {
-    wp_enqueue_script('pm_tools.js', false, array('jquery', 'jquery-ui', false,
-      true));
+  function admin_menu() {
+    $page = add_management_page(__('Merge Posts'), __('Merge Posts'),
+      'edit_published_posts', $this->merge_page_slug, array($this, 'merge_page'));
+    add_action("admin_print_styles-$page",
+      array($this, 'merge_styles_register'));
+
+  }
+
+  function merge_styles_register() {
+    wp_enqueue_script('pm-merge-script');
+    wp_enqueue_style('pm-merge-style');
+  }
+
+  function merge_page() {
+    if (! isset($_GET['pm-one']) || ! isset($_GET['pm-another']))
+      wp_die(__('pm-one or pm-another not set.'));
+
+    $one = get_post(intval($_GET['pm-one']));
+    $another = get_post(intval($_GET['pm-another']));
+
+    if (! current_user_can('edit_others_posts') &&
+      ($one->post_author != $another->post_author || $one-post_author != get_current_user_id()))
+        wp_die(__('You do not have sufficient permissions to access this page.'));
+
   }
   function tools_styles() {
     wp_enqueue_style('pm_tools.css');
   }
 }
 }
-new PostMerge()
-
+new PostMerge();
 ?>
