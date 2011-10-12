@@ -102,7 +102,7 @@ and it will tell you, that you should go away. See that [WordPress bug]((https:/
 
 I guess, there are plenty others. Please file a bug in the [bugtracker](https://github.com/ibotty/wp-post-merge/issues) if you find any.
 
-There no Ajax-Workflow, because it has not been implemented.
+There no Ajax workflow, because it has not been implemented.
 It should be possible using html5 history support or pretty hacky with some for now missing WordPress functionality (at least for WP3.2). Feel free to send patches.
 
 
