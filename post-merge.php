@@ -113,7 +113,7 @@ class PostMerge {
 
   function admin_menu() {
     $page = add_management_page(__('Merge Posts'), __('Merge Posts'),
-      'edit_published_posts', $this->merge_page_slug, array($this, 'merge_page'));
+      'edit_published_posts', $this->merge_page_slug, array($this, 'tools_page'));
     add_action("admin_print_styles-$page",
       array($this, 'merge_styles_register'));
 
@@ -124,7 +124,7 @@ class PostMerge {
     wp_enqueue_style('pm-merge-style');
   }
 
-  function merge_page() {
+  function tools_page() {
     if (! isset($_GET['pm-one']) || ! isset($_GET['pm-another']))
       wp_die(__('pm-one or pm-another not set.'));
 
@@ -135,6 +135,36 @@ class PostMerge {
       ($one->post_author != $another->post_author || $one-post_author != get_current_user_id()))
         wp_die(__('You do not have sufficient permissions to access this page.'));
 
+    #
+    if (! isset($_POST['pm_merged_post'])) {
+
+      do_action('pm_merge');
+
+      $one = apply_filters("pm_enrich_post", $one);
+      $another = apply_filters("pm_enrich_post", $another);
+
+      $fields = array_keys(get_object_vars($one));
+      $fields = apply_filters("pm_merge_fields", $fields, $one, $another);
+
+      include "includes/merge.php";
+    }
+    else {
+      do_action('pm_real_merge');
+
+      $merged_post = array();
+      foreach ($_POST as $key=>$val)
+        // add fields that begin with 'pm-' to the post
+        if (substr($key, 0, strlen('pm-')) == 'pm-')
+          $merged_post[substr($key, strlen('pm-'))] = $val;
+      // cast to object
+      $merged_post = (object) $merged_post;
+
+      // save post
+      $merged_post = apply_filters('pm_prepare_merged_post' , $merged_post);
+      do_action('pm_save_merged_post', $merged_post);
+
+      // XXX: how do i know everything worked?
+    }
   }
   function tools_styles() {
     wp_enqueue_style('pm_tools.css');
