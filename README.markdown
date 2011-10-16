@@ -65,6 +65,7 @@ Is there any example code on how to extend it?
 
 Glad you asked:
 
+```php
     # add a field to posts
     function my_add_foobar($post) {
       $post->foobar = my_db_get_foobar ($post);
@@ -90,7 +91,7 @@ Glad you asked:
       add_action('pm_save_merged_post','my_save_foobar');
     }
     add_action('pm_real_merge', 'my_real_merge');
-
+```
 
 Known bugs
 --------------
