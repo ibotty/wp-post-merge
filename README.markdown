@@ -23,6 +23,12 @@ About the name
 There has always already been nothing to tell about it.
 
 
+License
+--------------
+
+The plugin is licensed under the 2-claused BSD license. See LICENSE for details.
+
+
 Extending the plugin
 --------------
 
@@ -41,7 +47,7 @@ The following hooks can be added or removed in a `pm_real_merge` action.
 
 * `pm_prepare_merged_post` is a filter to set specific attributes of the to be saved post.
 
-* `pm_save_merged_post` is an action to save additional fields. The old IDs
+* `pm_save_post` is an action to save additional fields. The old IDs
 are available in the `old_IDs` member of the post.
 
 
@@ -66,31 +72,31 @@ Is there any example code on how to extend it?
 Glad you asked:
 
 ```php
-    # add a field to posts
-    function my_add_foobar($post) {
-      $post->foobar = my_db_get_foobar ($post);
-      return $post;
-    }
-    # remove post_author field for pages
-    function my_remove_author($fields, $one, $another) {
-      if ($one->post_type == 'page')
-        unset($fields["post_author"]);
-      return $fields;
-    }
-    function my_merge() {
-      add_filter('pm_enrich_post', 'my_add_foobar');
-      # default priority 10
-      add_filter('pm_merge_fields', 'my_remove_author', 10, 3);
-    }
-    add_action('pm_merge', 'my_merge');
+# add a field to posts
+function my_add_foobar($post) {
+  $post->foobar = my_db_get_foobar ($post);
+  return $post;
+}
+# remove post_author field for pages
+function my_remove_author($fields, $one, $another) {
+  if ($one->post_type == 'page')
+    unset($fields["post_author"]);
+  return $fields;
+}
+function my_merge() {
+  add_filter('pm_enrich_post', 'my_add_foobar');
+  # default priority 10
+  add_filter('pm_merge_fields', 'my_remove_author', 10, 3);
+}
+add_action('pm_merge', 'my_merge');
 
-    function my_save_foobar($post) {
-      my_db_set_foobar ($post->ID, $post->foobar);
-    }
-    function my_real_merge() {
-      add_action('pm_save_merged_post','my_save_foobar');
-    }
-    add_action('pm_real_merge', 'my_real_merge');
+function my_save_foobar($post) {
+  my_db_set_foobar ($post->ID, $post->foobar);
+}
+function my_real_merge() {
+  add_action('pm_save_merged_post','my_save_foobar');
+}
+add_action('pm_real_merge', 'my_real_merge');
 ```
 
 Known bugs

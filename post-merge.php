@@ -66,15 +66,11 @@ class PostMerge {
   }
 
   function admin_init() {
-    wp_register_script('jsdifflib', plugins_url('/vendor/jsdifflib/difflib.js',
-      __FILE__));
-    wp_register_style('jsdifflib', plugins_url('/vendor/jsdifflib/diffview.css',
-      __FILE__));
+    wp_register_script('jquery.fn.autoresize',
+      plugins_url('/vendor/jquery.fn.autoResize/jquery.autoresize.js', __FILE__));
 
-    wp_register_script('pm-merge-script', plugins_url('/pm-merge.js', __FILE__),
-      array('jsdifflib'));
-    wp_register_style('pm-merge-style', plugins_url('/pm-merge.css', __FILE__),
-      array('jssdiflib'));
+    wp_register_script('pm-merge-script', plugins_url('/pm-merge.js', __FILE__));
+    wp_register_style('pm-merge-style', plugins_url('/pm-merge.css', __FILE__));
   }
 
   function admin_head() {
@@ -116,54 +112,93 @@ class PostMerge {
       'edit_published_posts', $this->merge_page_slug, array($this, 'tools_page'));
     add_action("admin_print_styles-$page",
       array($this, 'merge_styles_register'));
-
   }
 
   function merge_styles_register() {
+    wp_enqueue_script('jquery.fn.autoresize');
     wp_enqueue_script('pm-merge-script');
     wp_enqueue_style('pm-merge-style');
   }
 
   function tools_page() {
-    if (! isset($_GET['pm-one']) || ! isset($_GET['pm-another']))
+    global $wpdb;
+
+    if (! isset($_REQUEST['pm-one']) || ! isset($_REQUEST['pm-another']))
       wp_die(__('pm-one or pm-another not set.'));
 
-    $one = get_post(intval($_GET['pm-one']));
-    $another = get_post(intval($_GET['pm-another']));
+    $one = get_post(intval($_REQUEST['pm-one']));
+    $another = get_post(intval($_REQUEST['pm-another']));
 
     if (! current_user_can('edit_others_posts') &&
       ($one->post_author != $another->post_author || $one-post_author != get_current_user_id()))
         wp_die(__('You do not have sufficient permissions to access this page.'));
 
-    #
-    if (! isset($_POST['pm_merged_post'])) {
+
+    // compare and select for merge
+    if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
       do_action('pm_merge');
 
-      $one = apply_filters("pm_enrich_post", $one);
-      $another = apply_filters("pm_enrich_post", $another);
+      $one = (object) array_filter((array) apply_filters("pm_enrich_post", $one));
+      $another = (object) array_filter((array) apply_filters("pm_enrich_post", $another));
 
-      $fields = array_keys(get_object_vars($one));
+      // somehow array_unique is required...
+      $fields = array_unique(array_merge(array_keys((array) $one), array_keys((array) $another)));
+
       $fields = apply_filters("pm_merge_fields", $fields, $one, $another);
 
-      include "includes/merge.php";
+      include "includes/merge.php"; // can (and should) use $fields, $one and $another
     }
+    // POST: save merged post
     else {
-      do_action('pm_real_merge');
+      check_admin_referer('pm-nonce');
 
+      $old_post_ids = array($_REQUEST["pm-one"], $_REQUEST["pm-another"]);
       $merged_post = array();
+
       foreach ($_POST as $key=>$val)
         // add fields that begin with 'pm-' to the post
-        if (substr($key, 0, strlen('pm-')) == 'pm-')
-          $merged_post[substr($key, strlen('pm-'))] = $val;
-      // cast to object
+        if (substr($key, 0, strlen('pmp-')) == 'pmp-')
+          $merged_post[substr($key, strlen('pmp-'))] = $val;
+
       $merged_post = (object) $merged_post;
-
-      // save post
       $merged_post = apply_filters('pm_prepare_merged_post' , $merged_post);
-      do_action('pm_save_merged_post', $merged_post);
 
-      // XXX: how do i know everything worked?
+      $wp_post_cols = array('ID', 'post_author', 'post_date',
+        'post_date_gmt', 'post_content', 'post_content_filtered',
+        'post_title', 'post_excerpt', 'post_status', 'post_type',
+        'comment_count', 'comment_status', 'ping_status', 'post_password',
+        'post_name', 'to_ping', 'pinged', 'post_modified',
+        'post_modified_gmt', 'post_parent', 'menu_order', 'post_mime_type',
+        'guid');
+
+      // the "main" part of the new post
+      $wp_post = array();
+      foreach ($wp_post_cols as $key)
+        if (isset($merged_post->$key)) {
+          $wp_post[$key] = $merged_post->$key;
+          unset($merged_post->$key);
+        }
+
+      $new_id = $wp_post["ID"];
+
+      if ($new_id == "new") {
+        $new_id = wp_insert_post($wp_post);
+        foreach ($old_post_ids as $oldid)
+          wp_trash_post($id);
+      } else {
+        // check, whether someone did something bad first (exchanged ids)
+        if (! in_array($new_id, $old_post_ids))
+          wp_die("tsetsetse! nice try though.");
+        $old_post_ids = array_diff($old_post_ids, array($new_id));
+        // there is only one id left in old_post_ids
+        wp_trash_post($old_post_ids[0]);
+        $old_post_ids[] = wp_update_post($wp_post);
+      }
+
+      do_action('pm_save_post', $merged_post, $new_id);
+
+      include 'includes/saved.php'; // can (and should use) $old_post_ids and $new_id
     }
   }
   function tools_styles() {
