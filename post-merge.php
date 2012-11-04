@@ -185,7 +185,7 @@ class PostMerge {
       if ($new_id == "new") {
         $new_id = wp_insert_post($wp_post);
         foreach ($old_post_ids as $oldid)
-          wp_trash_post($id);
+          wp_trash_post($oldid);
       } else {
         // check, whether someone did something bad first (exchanged ids)
         if (! in_array($new_id, $old_post_ids))
