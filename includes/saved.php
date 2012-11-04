@@ -28,11 +28,19 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 function post_link_with_title($id) {
   $post = get_post($id);
-  return "<a href='".get_permalink($id)."'>$post->post_title</a>";
+  $post_title = $post->post_title;
+  if (! $post_title)
+      $post_title = "Post $id";
+  return "<a href='".get_edit_post_link($id)."'>$post_title</a>";
+}
+
+function post_title_and_id($id) {
+  $post = get_post($id);
+  return "<span> $post->post_title ($id) </span>";
 }
 
 _log(post_link_with_title($old_post_ids[0]));
 ?>
 
 <h1>Successfully merged posts</h2>
-<p> You merged <?php echo join(" and ", array_map("post_link_with_title", $old_post_ids));?> into <?php echo post_link_with_title($new_id);?>. </p>
+<p> You merged <?php echo join(" and ", array_map("post_title_and_id", $old_post_ids));?> into <?php echo post_link_with_title($new_id);?>. </p>
