@@ -38,8 +38,6 @@ function post_title_and_id($id) {
   $post = get_post($id);
   return "<span> $post->post_title ($id) </span>";
 }
-
-_log(post_link_with_title($old_post_ids[0]));
 ?>
 
 <h1>Successfully merged posts</h2>

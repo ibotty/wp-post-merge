@@ -139,15 +139,16 @@ class PostMerge {
 
       do_action('pm_merge');
 
-      $one = (object) array_filter((array) apply_filters("pm_enrich_post", $one));
-      $another = (object) array_filter((array) apply_filters("pm_enrich_post", $another));
+      $one_data = array_filter(apply_filters("pm_change_data", (array) $one, $one));
+      $another_data = array_filter(apply_filters("pm_change_data", (array) $another, $another));
 
       // somehow array_unique is required...
-      $fields = array_unique(array_merge(array_keys((array) $one), array_keys((array) $another)));
+      $fields = array_unique(array_merge(array_keys($one_data), array_keys($another_data)));
 
       $fields = apply_filters("pm_merge_fields", $fields, $one, $another);
 
-      include "includes/merge.php"; // can (and should) use $fields, $one and $another
+      // can (and should) use $fields, $one, $one_data and $another, $another_data
+      include "includes/merge.php";
     }
     // POST: save merged post
     else {
@@ -157,7 +158,7 @@ class PostMerge {
       $merged_post = array();
 
       foreach ($_POST as $key=>$val)
-        // add fields that begin with 'pm-' to the post
+        // add fields that begin with 'pmp-' to the post
         if (substr($key, 0, strlen('pmp-')) == 'pmp-')
           $merged_post[substr($key, strlen('pmp-'))] = $val;
 
@@ -192,7 +193,7 @@ class PostMerge {
           wp_die("tsetsetse! nice try though.");
         $old_post_ids = array_diff($old_post_ids, array($new_id));
         // there is only one id left in old_post_ids
-        wp_trash_post($old_post_ids[0]);
+        wp_trash_post(current($old_post_ids));
         $old_post_ids[] = wp_update_post($wp_post);
       }
 
