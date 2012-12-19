@@ -3,4 +3,4 @@
 	url = git://github.com/cemerick/jsdifflib.git
 [submodule "vendor/jquery.fn.autoResize"]
 	path = vendor/jquery.fn.autoResize
-	url = git://github.com/padolsey/jQuery.fn.autoResize.git
+	url = git://github.com/ibotty/jquery.fn.autoResize.git
