@@ -205,4 +205,4 @@ jQuery('textarea').autoResize({
   extraSpace: 16,
   animate: false});
 </script>
-<!-- vim: set ft=html ts=2: -->
+<!-- vim: set ft=php.html ts=2: -->
