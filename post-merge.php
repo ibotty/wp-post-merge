@@ -124,7 +124,7 @@ class PostMerge {
     global $wpdb;
 
     if (! isset($_REQUEST['pm-one']) || ! isset($_REQUEST['pm-another']))
-      wp_die(__('pm-one or pm-another not set.'));
+      wp_die(__('Please select two posts to merge in the post overview.'));
 
     $one = get_post(intval($_REQUEST['pm-one']));
     $another = get_post(intval($_REQUEST['pm-another']));
