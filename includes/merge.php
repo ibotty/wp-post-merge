@@ -117,6 +117,11 @@ function pm_echo_diff_input($field, $one_data, $another_data, $default="") {
 
 ?>
 
+<a href='javascript:' onclick='jQuery(".pm-hidden-field").toggle()'>
+  Show/hide internal fields.
+</a>
+
+
 <form action='' method='post'>
   <?php wp_nonce_field('pm-nonce');?>
 
@@ -140,7 +145,6 @@ function pm_echo_diff_input($field, $one_data, $another_data, $default="") {
     <tbody>
 <?php foreach ($fields as $field) {
 
-ButterLog::debug("field $field");
   /*
    * the function to return needs the following signature.
    * $display_f = function($field, $rec){...};
@@ -158,9 +162,14 @@ ButterLog::debug("field $field");
    */
   $mergefunc = apply_filters('pm_mergefield_func', 'pm_echo_input_for_field', $field, $one_data, $another_data);
 
-  echo "<tr>";
+  $hidden = apply_filters('pm_hidden_field', false, $field, $one_data, $another_data);
+
+  echo "<tr";
+  if ($hidden)
+      echo " class='pm-hidden-field' style='display:none;'";
+  echo ">";
   echo "<td>$field</td>";
-  echo "<td class='pm-one-field 'pm-field-$field'>";
+  echo "<td class='pm-one-field pm-field-$field'>";
   if (isset($one_data->$field))
     call_user_func($display_func, $field, $one_data);
   echo "</td>";
@@ -177,6 +186,7 @@ ButterLog::debug("field $field");
   else if (isset($another_data->$field))
     call_user_func($mergefunc, $field, $one_data, $another_data, $another_data->$field);
   echo "</td>";
+  echo "</tr>";
 }
 ?>
     </tbody>
