@@ -100,7 +100,7 @@ function pm_echo_select_input($field, $values, $default=null) {
 }
 
 /**
- * echos a ajaxified diff view
+ * echos an ajaxified diff view
  * (most suitable for big fields)
  */
 function pm_echo_diff_input($field, $one_data, $another_data, $default="") {
@@ -148,6 +148,7 @@ ButterLog::debug("field $field");
    * the default is pm_echo_display_for_field
    */
   $display_func = apply_filters('pm_displayfield_func', 'pm_echo_display_for_field', $field, $one_data, $another_data);
+
   /*
    * the function to return needs the following signature.
    * $merge_f = function($field, $rec1, $rec2, $default){...};

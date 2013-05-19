@@ -62,6 +62,7 @@ class PostMerge {
 
   function install() {
   }
+
   function deinstall() {
   }
 
@@ -188,10 +189,12 @@ class PostMerge {
         foreach ($old_post_ids as $oldid)
           wp_trash_post($oldid);
       } else {
-        // check, whether someone did something bad first (exchanged ids)
+        // check, whether someone did something bad first (changed ids)
         if (! in_array($new_id, $old_post_ids))
           wp_die("tsetsetse! nice try though.");
+
         $old_post_ids = array_diff($old_post_ids, array($new_id));
+
         // there is only one id left in old_post_ids
         wp_trash_post(current($old_post_ids));
         $old_post_ids[] = wp_update_post($wp_post);
@@ -202,6 +205,7 @@ class PostMerge {
       include 'includes/saved.php'; // can (and should use) $old_post_ids and $new_id
     }
   }
+
   function tools_styles() {
     wp_enqueue_style('pm_tools.css');
   }
