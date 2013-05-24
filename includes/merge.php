@@ -60,12 +60,11 @@ function pm_echo_input_for_field($field, $one_data, $another_data, $default="") 
 
   switch ($field){
   case 'ID':
-    pm_echo_select_input($field, array($one_data->$field=>$one_data->$field, $another_data->$field=>$another_data->$field, 'new'=>__('generate new post')), 'new');
-    break;
-  case 'post_status':
-
-  case 'post_title': case 'post_password': case 'guid':
-    echo "<input type='text' name='pmp-$field'></input>";
+    $values = array(
+        $one_data->$field     => $one_data->$field,
+        $another_data->$field => $another_data->$field,
+        'new'                 => __('generate new post'));
+    pm_echo_select_input($field, $values, 'new');
     break;
   case 'post_date': case 'post_date_gmt': case 'post_modified': case 'post_modified_gmt':
     $values = array($one_data->$field, $another_data->$field, date('Y-m-d H:i:s'));
