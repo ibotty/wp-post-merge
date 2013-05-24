@@ -183,24 +183,30 @@ class PostMerge {
         }
 
       $new_id = $wp_post["ID"];
-
-      if ($new_id == "new") {
+      if ($new_id == "new")
         $new_id = wp_insert_post($wp_post);
-        foreach ($old_post_ids as $oldid)
-          wp_trash_post($oldid);
-      } else {
+      else {
         // check, whether someone did something bad first (changed ids)
         if (! in_array($new_id, $old_post_ids))
           wp_die("tsetsetse! nice try though.");
 
+        // don't delete updated post
         $old_post_ids = array_diff($old_post_ids, array($new_id));
 
-        // there is only one id left in old_post_ids
-        wp_trash_post(current($old_post_ids));
-        $old_post_ids[] = wp_update_post($wp_post);
+        wp_update_post($wp_post);
       }
 
-      do_action('pm_save_post', $merged_post, $new_id);
+      /**
+       * pm_save post is an action taking
+       * - the new id
+       * - the to be trashed ids
+       * - the changed wp_posts' fields
+       * - the changed metadata fields (or anything else set)
+       */
+      do_action('pm_save_post', $new_id, $old_post_ids, $wp_post, (array) $merged_post);
+
+      foreach ($old_post_ids as $oldid)
+        wp_trash_post($oldid);
 
       include 'includes/saved.php'; // can (and should use) $old_post_ids and $new_id
     }
